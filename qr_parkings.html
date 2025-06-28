@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>QR Code Parking Scanner</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      text-align: center;
+      padding: 20px;
+    }
+
+    h1 {
+      color: #2E8B57;
+      margin-bottom: 10px;
+    }
+
+    #reader {
+      width: 320px;
+      margin: 20px auto;
+    }
+
+    #message {
+      font-size: 16px;
+      color: #555;
+      margin-top: 20px;
+    }
+
+    .success {
+      color: green;
+      font-weight: bold;
+      margin-top: 30px;
+      font-size: 18px;
+    }
+
+    .error {
+      color: red;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+  </style>
+
+  <!-- ✅ html5-qrcode library -->
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+</head>
+<body>
+
+  <h1>QR Code Parking</h1>
+  <p>Scan your parking QR code below:</p>
+
+  <div id="reader"></div>
+  <div id="message">Starting camera...</div>
+  <div id="result"></div>
+
+  <script>
+    const html5QrCode = new Html5Qrcode("reader");
+
+    function validateQRCode(data) {
+      // ✅ Customize your validation logic
+      return data.startsWith("PARKING-") || data.length > 5;
+    }
+
+    function startScanner() {
+      Html5Qrcode.getCameras().then(cameras => {
+        if (cameras && cameras.length > 0) {
+          const cameraId = cameras[0].id;
+
+          html5QrCode.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: 250 },
+            qrCodeMessage => {
+              if (validateQRCode(qrCodeMessage)) {
+                html5QrCode.stop().then(() => {
+                  document.getElementById("reader").style.display = "none";
+                  document.getElementById("message").style.display = "none";
+                  document.getElementById("result").innerHTML =
+                    `<div class="success">✅ Valid QR Code<br>Thank you for using our service!<br><br>Redirecting to home page in 13 seconds...</div>`;
+
+                  // ⏳ Redirect after 13 seconds
+                  setTimeout(() => {
+                    window.location.href = "index.html";
+                  }, 13000);
+
+                }).catch(err => {
+                  console.error("Stop failed:", err);
+                });
+              } else {
+                document.getElementById("result").innerHTML =
+                  `<div class="error">❌ Invalid QR Code</div>`;
+              }
+            },
+            errorMessage => {
+              // optional: handle scan error
+            }
+          ).then(() => {
+            document.getElementById("message").innerText = "Camera ready. Point to a QR code.";
+          }).catch(err => {
+            document.getElementById("message").innerText = "Camera start error: " + err;
+          });
+        } else {
+          document.getElementById("message").innerText = "No camera found.";
+        }
+      }).catch(err => {
+        document.getElementById("message").innerText = "Camera access error: " + err;
+      });
+    }
+
+    window.addEventListener("load", startScanner);
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Dashboard – Smart Parking</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f0f0;
+      margin: 0;
+    }
+    header {
+      background: #2c3e50;
+      color: #fff;
+      padding: 15px;
+      text-align: center;
+    }
+    .container {
+      padding: 30px;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    input[type="text"] {
+      display: block;
+      margin: 0 auto 20px;
+      padding: 10px;
+      width: 60%;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .next-btn {
+      display: block;
+      margin: 40px auto 0;
+      padding: 12px 30px;
+      font-size: 16px;
+      background-color: #2ecc71;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .next-btn:hover {
+      background-color: #27ae60;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #ccc;
+      text-align: center;
+    }
+    th {
+      background: #34495e;
+      color: #fff;
+    }
+    .section {
+      margin-top: 60px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Admin Dashboard</h1>
+</header>
+
+<div class="container">
+  <h2>Current Bookings</h2>
+
+  <!-- Search Bar -->
+  <input type="text" id="searchInput" placeholder="Search by User ID or Vehicle Number...">
+
+  <!-- Next Button -->
+  <button class="next-btn" onclick="goToReleasePage()">Next →</button>
+</div>
+
+<div class="container section">
+  <h2>All Registered Customers</h2>
+  <table id="customerTable">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>User ID</th>
+        <th>Email</th>
+        <th>Vehicle Number</th>
+        <th>Registered On</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<script>
+const allCustomers = JSON.parse(localStorage.getItem('allCustomers')) || [];
+const customerBody = document.querySelector('#customerTable tbody');
+
+function renderCustomers() {
+  customerBody.innerHTML = '';
+  allCustomers.forEach(user => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${user.name || 'N/A'}</td>
+      <td>${user.userId || 'N/A'}</td>
+      <td>${user.email || 'N/A'}</td>
+      <td>${user.vehicleNumber || 'N/A'}</td>
+      <td>${user.registeredOn || 'N/A'}</td>
+    `;
+    customerBody.appendChild(row);
+  });
+}
+
+function goToReleasePage() {
+  window.location.href = 'release.html';
+}
+
+renderCustomers();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Customer Dashboard – Smart Parking</title>
+  <style>
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f5f5f5;
+      margin: 0;
+    }
+    header {
+      background: #333;
+      color: #fff;
+      padding: 10px 20px;
+      text-align: center;
+    }
+    .container {
+      display: flex;
+      justify-content: space-between;
+      padding: 40px;
+      flex-wrap: wrap;
+    }
+    .booking-form {
+      width: 340px;
+      min-width: 280px;
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, .1);
+    }
+    .booking-form input, select {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      font-size: 15px;
+    }
+    .slot-grid {
+      flex: 1;
+      text-align: center;
+      min-width: 320px;
+    }
+    .row-label {
+      margin-right: 5px;
+      font-weight: 700;
+    }
+    .slot {
+      width: 50px;
+      height: 50px;
+      border: 2px solid orange;
+      display: inline-block;
+      margin: 5px;
+      cursor: pointer;
+      background-color: white;
+      text-align: center;
+      line-height: 50px;
+      font-size: 11px;
+      font-weight: bold;
+      overflow: hidden;
+    }
+    .slot.vehicle-in {
+      background: red !important;
+      color: white;
+      cursor: not-allowed;
+    }
+    .slot.selected {
+      background: green !important;
+      color: white;
+    }
+    #slotStatus {
+      margin-top: 15px;
+      font-weight: 700;
+      display: none;
+    }
+    #bookBtn {
+      padding: 10px 20px;
+      background: orange;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      border-radius: 5px;
+      margin-top: 10px;
+    }
+    #successMsg {
+      color: green;
+      text-align: center;
+      display: none;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h2>Welcome, <span id="customerName">Customer</span></h2>
+</header>
+
+<div class="container">
+  <!-- LEFT FORM -->
+  <div class="booking-form">
+    <label>Date: <input type="date" id="date"></label>
+    <label>Start Time: <input type="time" id="time"></label>
+    <label>Parking Hours: <input type="number" id="hours" min="1"></label>
+    <label>Parking Cost (₹50/hr): <input type="text" id="totalCost" readonly placeholder="Auto‑calculated"></label>
+    <label>Payment Mode:
+      <select id="paymentMode">
+        <option>Cash</option>
+        <option>UPI</option>
+        <option>Card</option>
+      </select>
+    </label>
+    <label>Your Vehicle Number:
+      <input type="text" id="vehicleNumber" readonly>
+    </label>
+    <input type="hidden" id="selectedSlot">
+    <button id="bookBtn">Book Now</button>
+    <div id="successMsg">🎉 Booking Successful!</div>
+  </div>
+
+  <!-- RIGHT GRID -->
+  <div class="slot-grid">
+    <div><span class="row-label">A</span>
+      <div class="slot" data-slot="A1"></div><div class="slot" data-slot="A2"></div><div class="slot" data-slot="A3"></div>
+      <div class="slot" data-slot="A4"></div><div class="slot" data-slot="A5"></div><div class="slot" data-slot="A6"></div>
+      <div class="slot" data-slot="A7"></div><div class="slot" data-slot="A8"></div><div class="slot" data-slot="A9"></div>
+      <div class="slot" data-slot="A10"></div>
+    </div>
+    <div><span class="row-label">B</span>
+      <div class="slot" data-slot="B1"></div><div class="slot" data-slot="B2"></div><div class="slot" data-slot="B3"></div>
+      <div class="slot" data-slot="B4"></div><div class="slot" data-slot="B5"></div><div class="slot" data-slot="B6"></div>
+      <div class="slot" data-slot="B7"></div><div class="slot" data-slot="B8"></div><div class="slot" data-slot="B9"></div>
+      <div class="slot" data-slot="B10"></div>
+    </div>
+    <div><span class="row-label">C</span>
+      <div class="slot" data-slot="C1"></div><div class="slot" data-slot="C2"></div><div class="slot" data-slot="C3"></div>
+      <div class="slot" data-slot="C4"></div><div class="slot" data-slot="C5"></div><div class="slot" data-slot="C6"></div>
+      <div class="slot" data-slot="C7"></div><div class="slot" data-slot="C8"></div><div class="slot" data-slot="C9"></div>
+      <div class="slot" data-slot="C10"></div>
+    </div>
+    <div id="slotStatus"></div>
+  </div>
+</div>
+
+<script>
+const user = JSON.parse(localStorage.getItem('loggedInUser'));
+if (!user) {
+  alert('You are not logged in!');
+  location.href = 'customer_login.html';
+} else {
+  customerName.textContent = user.name;
+  document.getElementById('vehicleNumber').value = user.vehicle || 'Not Provided';
+}
+
+if (localStorage.getItem('bookingSuccess') === 'true') {
+  successMsg.style.display = 'block';
+  localStorage.removeItem('bookingSuccess');
+  setTimeout(() => { successMsg.style.display = 'none' }, 5000);
+}
+
+const costPerHour = 50;
+hours.addEventListener('input', () => {
+  const hrs = parseInt(hours.value, 10);
+  totalCost.value = (!isNaN(hrs) && hrs > 0) ? hrs * costPerHour : '';
+});
+
+const slotStatus = document.getElementById('slotStatus');
+const slotEls = document.querySelectorAll('.slot');
+const selectedSlot = document.getElementById('selectedSlot');
+let slotStates = JSON.parse(localStorage.getItem('slotStates')) || {};
+
+// Remove expired bookings
+function autoExpireSlots() {
+  const now = new Date().getTime();
+  let changed = false;
+  for (const [slotId, data] of Object.entries(slotStates)) {
+    if (typeof data === 'object' && data.endTime && now > data.endTime) {
+      delete slotStates[slotId];
+      changed = true;
+    }
+  }
+  if (changed) {
+    localStorage.setItem('slotStates', JSON.stringify(slotStates));
+  }
+}
+autoExpireSlots();
+
+// Display slots
+slotEls.forEach(el => {
+  const id = el.dataset.slot;
+  const state = slotStates[id];
+
+  if (state && state.status === 'booked') {
+    el.classList.add('vehicle-in');
+    el.textContent = state.vehicleNumber || 'Booked';
+  } else {
+    el.classList.remove('vehicle-in');
+    el.textContent = '';
+  }
+
+  el.addEventListener('click', () => {
+    if (slotStates[id] && slotStates[id].status === 'booked') {
+      slotStatus.textContent = `SLOT ${id} IS BOOKED (Vehicle inside)`;
+      slotStatus.style.display = 'block';
+      return;
+    }
+    slotEls.forEach(s => s.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedSlot.value = id;
+    slotStatus.textContent = `SLOT ${id} IS AVAILABLE`;
+    slotStatus.style.display = 'block';
+  });
+});
+
+// Booking
+bookBtn.addEventListener('click', () => {
+  const id = selectedSlot.value;
+  if (!id) {
+    alert('Please select a slot!');
+    return;
+  }
+
+  const start = new Date(`${date.value}T${time.value}`);
+  const hrs = parseInt(hours.value);
+  if (isNaN(start.getTime()) || isNaN(hrs) || hrs <= 0) {
+    alert("Please enter valid date, time, and hours.");
+    return;
+  }
+  start.setHours(start.getHours() + hrs);
+  const endTime = start.getTime();
+
+  slotStates[id] = {
+    status: 'booked',
+    endTime: endTime,
+    vehicleNumber: user.vehicle || 'Not Provided'
+  };
+  localStorage.setItem('slotStates', JSON.stringify(slotStates));
+
+  const ticket = {
+    bookingId: 'B' + Math.floor(Math.random() * 10000),
+    username: user.name,
+    email: user.email,
+    phone: user.phone,
+    vehicle: user.vehicle || "Not Provided",
+    slot: id,
+    date: date.value,
+    time: time.value,
+    hours: hours.value,
+    payment: paymentMode.value,
+    cost: totalCost.value
+  };
+
+  localStorage.setItem('latestTicket', JSON.stringify(ticket));
+  localStorage.setItem('bookingSuccess', 'true');
+  location.href = 'ticket.html';
+});
+</script>
+
+</body>
+</html>

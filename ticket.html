@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Booking Ticket – Smart Parking</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #eef2f3;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .ticket {
+      max-width: 500px;
+      margin: auto;
+      background: white;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      color: #333;
+    }
+
+    p {
+      font-size: 16px;
+      margin: 5px 0;
+    }
+
+    canvas {
+      margin-top: 15px;
+    }
+
+    #downloadBtn {
+      margin-top: 15px;
+      padding: 10px 16px;
+      background: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    #downloadBtn:hover {
+      background: #45a049;
+    }
+  </style>
+</head>
+<body>
+
+<div class="ticket">
+  <h2>🎟️ Parking Ticket</h2>
+  <p><strong>Booking ID:</strong> <span id="bookingId"></span></p>
+  <p><strong>Name:</strong> <span id="name"></span></p>
+  <p><strong>Vehicle:</strong> <span id="vehicle"></span></p>
+  <p><strong>Slot:</strong> <span id="slot"></span></p>
+  <p><strong>Date:</strong> <span id="date"></span></p>
+  <p><strong>Time:</strong> <span id="time"></span></p>
+  <p><strong>Hours:</strong> <span id="hours"></span></p>
+  <p><strong>Cost:</strong> ₹<span id="cost"></span></p>
+  <p><strong>Payment:</strong> <span id="payment"></span></p>
+
+  <canvas id="qr"></canvas>
+  <br>
+  <button id="downloadBtn">📥 Download QR</button>
+</div>
+
+<script>
+const ticket = JSON.parse(localStorage.getItem('latestTicket'));
+
+if (!ticket) {
+  alert("No ticket data found!");
+  window.location.href = "customer_dashboard.html";
+}
+
+// Fill ticket details
+document.getElementById('bookingId').textContent = ticket.bookingId;
+document.getElementById('name').textContent = ticket.username;
+document.getElementById('vehicle').textContent = ticket.vehicleNumber;
+document.getElementById('slot').textContent = ticket.slot;
+document.getElementById('date').textContent = ticket.date;
+document.getElementById('time').textContent = ticket.time;
+document.getElementById('hours').textContent = ticket.hours;
+document.getElementById('cost').textContent = ticket.cost;
+document.getElementById('payment').textContent = ticket.payment;
+
+// Generate QR Code
+const qr = new QRious({
+  element: document.getElementById('qr'),
+  size: 180,
+  value: `Booking ID: ${ticket.bookingId}\nName: ${ticket.username}\nSlot: ${ticket.slot}\nDate: ${ticket.date}\nTime: ${ticket.time}\nVehicle: ${ticket.vehicleNumber}`
+});
+
+// Download QR and redirect
+document.getElementById('downloadBtn').addEventListener('click', () => {
+  const qrCanvas = document.getElementById('qr');
+  const link = document.createElement('a');
+  link.download = `${ticket.bookingId}_QR.png`;
+  link.href = qrCanvas.toDataURL();
+  link.click();
+
+  // Wait a moment, then redirect to home
+  setTimeout(() => {
+    window.location.href = 'index.html';
+  }, 1500); // ⏳ Adjust delay if needed
+});
+</script>
+
+</body>
+</html>

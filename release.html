@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Release Slots – Admin</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f8f8f8;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background: #2c3e50;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .container {
+      padding: 30px;
+      max-width: 800px;
+      margin: auto;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+      color: #2c3e50;
+      text-align: center;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: center;
+      border-bottom: 1px solid #ddd;
+    }
+
+    th {
+      background-color: #34495e;
+      color: white;
+    }
+
+    .release-btn {
+      background: #e74c3c;
+      color: white;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .release-btn:hover {
+      background: #c0392b;
+    }
+
+    .booked {
+      background-color: #d4edda; /* green background */
+    }
+
+    .message {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #dff0d8;
+      border: 1px solid #d0e9c6;
+      color: #3c763d;
+      border-radius: 4px;
+      display: none;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Manage Parking Slots</h1>
+  </header>
+
+  <div class="container">
+    <h2>Slots & Availability</h2>
+    <div id="exitMessage" class="message"></div>
+    <table id="slotTable">
+      <thead>
+        <tr>
+          <th>Slot</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script>
+    const totalSlots = 20;
+    const slotStates = JSON.parse(localStorage.getItem('slotStates')) || {};
+    const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers')) || [];
+    const tbody = document.querySelector("#slotTable tbody");
+    const messageBox = document.getElementById("exitMessage");
+
+    function renderTable() {
+      tbody.innerHTML = '';
+      for (let i = 1; i <= totalSlots; i++) {
+        const slotId = "S" + i;
+        const data = slotStates[slotId];
+        const isBooked = data && data.status === 'booked';
+
+        const row = document.createElement('tr');
+        if (isBooked) row.classList.add("booked");
+
+        row.innerHTML = `
+          <td>${slotId}</td>
+          <td>${isBooked ? "Booked" : "Available"}</td>
+          <td>
+            ${isBooked ? `<button class="release-btn" onclick="releaseSlot('${slotId}')">Release</button>` : "-"}
+          </td>
+        `;
+        tbody.appendChild(row);
+      }
+    }
+
+    function releaseSlot(slotId) {
+      const data = slotStates[slotId];
+      const user = registeredUsers.find(u => u.email === data?.email);
+      const name = user?.username || "Unknown";
+      const vehicle = user?.vehicleNumber || "N/A";
+
+      delete slotStates[slotId];
+      localStorage.setItem('slotStates', JSON.stringify(slotStates));
+      renderTable();
+
+      showExitMessage(`${name} with vehicle ${vehicle} has exited.`);
+    }
+
+    function showExitMessage(msg) {
+      messageBox.textContent = msg;
+      messageBox.style.display = 'block';
+      setTimeout(() => {
+        messageBox.style.display = 'none';
+      }, 4000);
+    }
+
+    renderTable();
+  </script>
+</body>
+</html>
